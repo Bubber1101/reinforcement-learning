@@ -37,7 +37,7 @@ def basic_q_learning(discount_factor=0.95,
                 state = next_state
         scores[i_episode] = score
 
-    return scores
+    return scores, q_table
 
 
 def update_q(q_table, reward, learning_rate, discount_factor, current_state, current_action, next_state):

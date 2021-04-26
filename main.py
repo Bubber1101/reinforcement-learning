@@ -27,7 +27,8 @@ def random_action(path_to_executable):
 if __name__ == '__main__':
     # randomAction("C:/Users/patry/Dev/Thesis/envs/Worm/UnityEnvironment.exe")
     # random_action("C:/Users/patry/Dev/Thesis/envs/Basic/Basic.exe")
-    scores = basic_q_learning(number_of_episodes=100, epsilon_decays=False, epsilon=0.8, learning_rate=0.9,
-                              discount_factor=0.98)
+    scores, q_table = basic_q_learning(number_of_episodes=100, epsilon_decays=False, epsilon=0.8, learning_rate=0.9,
+                                       discount_factor=0.98)
     plt.plot(scores)
     plt.show()
+    print(q_table)
