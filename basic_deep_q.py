@@ -24,7 +24,8 @@ def get_env() -> UnityToGymWrapper:
     Creates an Unity environment for `Basic <https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Learning
     -Environment-Examples.md#basic>`_ example
     """
-    unity_env = UnityEnvironment("C:/Users/patry/Dev/Thesis/envs/Basic/Basic.exe", no_graphics=False)
+    # unity_env = UnityEnvironment("C:/Users/patry/Dev/Thesis/envs/Basic/Basic.exe", no_graphics=False)
+    unity_env = UnityEnvironment("C:/Users/patry/Dev/Thesis/envs/Gridworld.exe", no_graphics=False)
     return UnityToGymWrapper(unity_env)
 
 

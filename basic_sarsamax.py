@@ -1,7 +1,6 @@
 import numpy as np
 from gym_unity.envs import UnityToGymWrapper
 from mlagents_envs.environment import UnityEnvironment
-from tqdm import tqdm
 
 
 def basic_q_learning(discount_factor=0.95,
@@ -18,7 +17,7 @@ def basic_q_learning(discount_factor=0.95,
     q_table = np.zeros((possible_states, possible_actions))
     scores = np.zeros((number_of_episodes, 1))
 
-    for i_episode in tqdm(range(number_of_episodes)):
+    for i_episode in range(number_of_episodes):
         if epsilon_decays:
             epsilon = max(epsilon * epsilon_decay, epsilon_min)
         score = 0
@@ -31,7 +30,12 @@ def basic_q_learning(discount_factor=0.95,
             if next_state is not None:
                 next_state = np.where(next_state == 1)[0][0]
             score = score + reward
-            q_table[state][action] = update_q(q_table, reward, learning_rate, discount_factor, state, action,
+            q_table[state][action] = update_q(q_table,
+                                              reward,
+                                              learning_rate,
+                                              discount_factor,
+                                              state,
+                                              action,
                                               next_state)
             if not done:
                 state = next_state
