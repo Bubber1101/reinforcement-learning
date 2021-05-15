@@ -12,9 +12,10 @@ def random_action(path_to_executable, number_of_episodes):
     This method runs an environment and performs random actions on it until a reward is reached
      for a given number of episodes
 
-    :param path_to_executable: Path to a
-    :param number_of_episodes:
-    :return: List of scores for each episode
+    :param path_to_executable: Path to an executable that contains a unity environment
+    :param number_of_episodes: Number of episodes the policy should be run for,
+           episode ends when the environment returns Done as true
+    :return: List of scores per each episode
     """
     try:
         unity_env = UnityEnvironment(path_to_executable)
@@ -51,13 +52,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     scores = 0
-
     scores = random_action(args.filepath, args.episodes)
 
-x = np.arange(start=0, stop=args.episodes)
-regression_line = np.poly2d(np.polyfit(x, scores, 5))
-plt.plot(scores, label='Episode Score')
-plt.plot(x, regression_line(x), label='Regression line')
-plt.ylim(-0.5, 1.1)
-plt.legend(loc='lower right')
-plt.show()

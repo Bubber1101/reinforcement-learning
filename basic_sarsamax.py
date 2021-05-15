@@ -6,6 +6,8 @@ import numpy as np
 from gym_unity.envs import UnityToGymWrapper
 from mlagents_envs.environment import UnityEnvironment
 
+from utils import plot_scores_with_regression_line
+
 
 def basic_q_learning(
         filepath,
@@ -30,7 +32,8 @@ def basic_q_learning(
     :param epsilon_min:
     :param number_of_episodes: number of episodes the agent should learn
     :param epsilon_decays: a boolean specifying if the epsilon value should decrease with each episode
-    :return:
+    :return: scores - a list of scores accumulated in each episode,
+     q_table - an array representing the agents Q-table
     """
     env = get_env(filepath)
     possible_states = env.observation_space.shape[0]
@@ -120,7 +123,7 @@ def get_action(q_table, state):
 
 def existing_file(filepath):
     """
-    'Type' for argparse - checks that file exists but does not open.
+    Checks if there is a file under the provided path
     """
     if not os.path.isfile(filepath):
         raise argparse.ArgumentTypeError("{0} is not a path to a file".format(filepath))
@@ -128,6 +131,11 @@ def existing_file(filepath):
 
 
 def get_env(filepath):
+    """
+
+    :param filepath:
+    :return:
+    """
     unity_env = UnityEnvironment(filepath, no_graphics=False)
     return UnityToGymWrapper(unity_env)
 
@@ -138,4 +146,5 @@ if __name__ == '__main__':
                         dest="filepath", required=True, type=existing_file,
                         help="Executable file containing a version of 'Basic' environment from ./envs folder")
     args = parser.parse_args()
-    basic_q_learning(args.filepath)
+    scores, q_table = basic_q_learning(args.filepath)
+    plot_scores_with_regression_line(scores, q_table)
