@@ -1,81 +1,100 @@
+"""
+Performs a Q-Learning training on a Unity ML-Agents environment and plots the results.
+The module was created with "Basic" environment in mind but will work with any other that shares it's interface.
+See https://github.com/Unity-Technologies/ml-agents/blob/main/docs/Learning-Environment-Examples.md#basic
+Calibration values can be passed to override the defaults.
+
+Created by Patryk Stradomski, s16716
+"""
+
 import argparse
 import os
-from argparse import ArgumentParser
 
 import numpy as np
 from gym_unity.envs import UnityToGymWrapper
 from mlagents_envs.environment import UnityEnvironment
+from mlagents_envs.exception import UnityEnvironmentException
 
-from utils import plot_scores_with_regression_line
+from plotting_utils import plot_scores_with_regression_line, plot_scores_with_epsilon_decay
 
 
 def basic_q_learning(
         filepath,
-        discount_factor=0.95,
-        learning_rate=0.1,
-        epsilon=1,
-        epsilon_decay=0.75,
-        epsilon_min=0.01,
-        number_of_episodes=100,
-        epsilon_decays=True):
+        discount_factor,
+        learning_rate,
+        epsilon,
+        epsilon_decay,
+        epsilon_min,
+        number_of_episodes):
     """
-    This performs a sarsamax training on environment "Basic" located under "envs/Basic.exe".
+    This performs a sarsamax training on "Basic" environment (or it's alteration) passed by filepath.
     The environment was prepared in unity and the script uses
     Unity ML-Agents Python Interface(https://github.com/Unity-Technologies/ml-agents/tree/main/ml-agents-envs)
     in order to communicate with the executable.
 
-    :param filepath:
-    :param discount_factor:
-    :param learning_rate:
-    :param epsilon:
-    :param epsilon_decay:
-    :param epsilon_min:
-    :param number_of_episodes: number of episodes the agent should learn
-    :param epsilon_decays: a boolean specifying if the epsilon value should decrease with each episode
+    :param filepath: Path to an executable containing a "Basic" unity environment
+    :param discount_factor: Sarsamax calibration parameter - discount factor of the function
+    :param learning_rate: Sarsamax calibration parameter - learning rate of the function
+    :param epsilon: The initial value of the variable checked against during explore v. exploit decision
+    It should be between 0 and 1
+    It is getting multiplied by epsilon_decay each episode
+    :param epsilon_decay: The value by which the epsilon is multiplied each episode
+    If no decay is necessary pass 1 here
+    :param epsilon_min: Minimal value of epsilon, Epsilon won't go lower than that value during decay
+    :param number_of_episodes: Number of episodes that the training should last for
+    Episode ends when a reward is reached
     :return: scores - a list of scores accumulated in each episode,
      q_table - an array representing the agents Q-table
     """
-    env = get_env(filepath)
-    possible_states = env.observation_space.shape[0]
-    possible_actions = env.action_space.n
+    unity_environment = UnityEnvironment(filepath)
+    environment = UnityToGymWrapper(unity_environment)
+    possible_states = environment.observation_space.shape[0]
+    possible_actions = environment.action_space.n
     q_table = np.zeros((possible_states, possible_actions))
     scores = []
 
-    for i_episode in range(number_of_episodes):
-        if epsilon_decays:
-            epsilon = max(epsilon * epsilon_decay, epsilon_min)
+    for _ in range(number_of_episodes):
         score = 0
-        state = env.reset().argmax()
+        state = environment.reset().argmax()  # Translation from list to integer
         done = False
         while not done:
-            action = choose_explore_exploit(q_table, state, epsilon, env.action_space)
-            next_state, reward, done, _ = env.step(action)
+            action = choose_explore_exploit(q_table, state, epsilon, environment.action_space)
+            next_state, reward, done, _ = environment.step(action)
             if next_state is not None:
-                next_state = next_state.argmax()
+                next_state = next_state.argmax()  # Translation from list to integer
             score = score + reward
-            q_table[state][action] = update_q(q_table,
-                                              reward,
-                                              learning_rate,
-                                              discount_factor,
-                                              state,
-                                              action,
-                                              next_state)
+            q_table[state][action] = calculate_q_value(q_table,
+                                                       reward,
+                                                       learning_rate,
+                                                       discount_factor,
+                                                       q_table[state][action],
+                                                       next_state)
             if not done:
                 state = next_state
+
         scores.append(score)
+        epsilon = max(epsilon * epsilon_decay, epsilon_min)
 
     return scores, q_table
 
 
-def update_q(q_table,
-             reward,
-             learning_rate,
-             discount_factor,
-             current_state,
-             current_action,
-             next_state):
+def calculate_q_value(q_table,
+                      reward,
+                      learning_rate,
+                      discount_factor,
+                      current_q_value,
+                      next_state):
+    """
+    Runs the sarsamax algorithm and returns new Q-Value for given state
+    :param q_table: The Q-table from which the Q-value is being calculated
+    :param reward:award received after last action
+    :param learning_rate: float (0,1] Sarsamax calibration parameter - learning rate of the function
+    :param discount_factor: float(0,1] Sarsamax calibration parameter - discount factor of the function
+    :param current_q_value: Current Q-Value for considered state:action pair
+    :param next_state: The state that came after the performed action
+    :return:
+    """
     expected_next_q_value = get_max_q_value_for_state(next_state, q_table)
-    current_q_value = q_table[current_state][current_action]
 
     return current_q_value + learning_rate * (reward + discount_factor * expected_next_q_value - current_q_value)
 
@@ -130,21 +149,63 @@ def existing_file(filepath):
     return filepath
 
 
-def get_env(filepath):
+def epsilon_parameter(value):
     """
+    Checks if value belongs to [0,1]
+    """
+    if value < 0 or value > 1:
+        raise argparse.ArgumentTypeError("{0} illegal argument passed, should be a float between 0 and 1".format(value))
+    return value
 
-    :param filepath:
-    :return:
+
+def sarsa_parameter(value):
     """
-    unity_env = UnityEnvironment(filepath, no_graphics=False)
-    return UnityToGymWrapper(unity_env)
+    Checks if value belongs to (0,1]
+    """
+    if value <= 0 or value > 1:
+        raise argparse.ArgumentTypeError("{0} illegal argument passed, should be a float between 0 and 1".format(value))
+    return value
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description="Sarsamax implementation on 'Basic' unity environment")
+    parser = argparse.ArgumentParser(description="Sarsamax implementation on 'Basic' unity environment")
     parser.add_argument("-f", "--file",
                         dest="filepath", required=True, type=existing_file,
-                        help="Executable file containing a version of 'Basic' environment from ./envs folder")
+                        help="A path to an executable file containing a version of 'Basic' environment")
+
+    parser.add_argument("-d", "--discount_factor", default=0.99,
+                        dest="discount_factor", required=False, type=sarsa_parameter,
+                        help="Sarsamax calibration parameter - discount factor of the function")
+
+    parser.add_argument("-l", "--learning_rate", default=0.99,
+                        dest="learning_rate", required=False, type=sarsa_parameter,
+                        help="Sarsamax calibration parameter - learning rate of the function")
+
+    parser.add_argument("-e", "--epsilon", default=1,
+                        dest="epsilon", required=False, type=epsilon_parameter,
+                        help="The initial value of the variable checked against during explore v. exploit decision.")
+
+    parser.add_argument("-ed", "--epsilon_decay", default=0.975,
+                        dest="epsilon_decay", required=False, type=epsilon_parameter,
+                        help="The value by which the epsilon is multiplied each episode.")
+
+    parser.add_argument("-em", "--epsilon_min", default=0.01,
+                        dest="epsilon_min", required=False, type=epsilon_parameter,
+                        help="Minimal value of epsilon, Epsilon won't go lower than that value during decay.")
+
+    parser.add_argument("-n", "--number_of_episodes", default=100,
+                        dest="number_of_episodes", required=False, type=int,
+                        help="Number of episodes that the training should last for.")
     args = parser.parse_args()
-    scores, q_table = basic_q_learning(args.filepath)
-    plot_scores_with_regression_line(scores, q_table)
+
+    try:
+        score_summary, populated_q_table = basic_q_learning(args.filepath, args.discount_factor, args.learning_rate,
+                                                            args.epsilon, args.epsilon_decay, args.epsilon_min,
+                                                            args.number_of_episodes)
+
+        plot_scores_with_regression_line(score_summary)
+        plot_scores_with_epsilon_decay(score_summary, args.epsilon, args.epsilon_decay, args.epsilon_min)
+        print(populated_q_table)
+    except UnityEnvironmentException as error:
+        print('There was a problem while creating an environment')
+        print(error)
