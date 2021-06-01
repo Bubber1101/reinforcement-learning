@@ -149,22 +149,32 @@ def existing_file(filepath):
     return filepath
 
 
-def epsilon_parameter(value):
+def epsilon_parameter(argument):
     """
-    Checks if value belongs to [0,1]
+    Checks if value is a float and belongs to [0,1]
     """
-    if value < 0 or value > 1:
-        raise argparse.ArgumentTypeError("{0} illegal argument passed, should be a float between 0 and 1".format(value))
-    return value
+    try:
+        argument = float(argument)
+    except ValueError:
+        raise argparse.ArgumentTypeError("{0} illegal argument passed, should be a float".format(argument))
+
+    if argument < 0 or argument > 1:
+        raise argparse.ArgumentTypeError("{0} illegal argument passed, should be between [0, 1]".format(argument))
+    return argument
 
 
-def sarsa_parameter(value):
+def sarsa_parameter(argument):
     """
-    Checks if value belongs to (0,1]
+    Checks if value is a float and belongs to (0,1]
     """
-    if value <= 0 or value > 1:
-        raise argparse.ArgumentTypeError("{0} illegal argument passed, should be a float between 0 and 1".format(value))
-    return value
+    try:
+        argument = float(argument)
+    except ValueError:
+        raise argparse.ArgumentTypeError("{0} illegal argument passed, should be a float".format(argument))
+
+    if argument <= 0 or argument > 1:
+        raise argparse.ArgumentTypeError("{0} illegal argument passed, should be between (0, 1]".format(argument))
+    return argument
 
 
 if __name__ == '__main__':
