@@ -36,7 +36,7 @@ def plot_scores_with_epsilon_decay(scores, initial_epsilon, epsilon_decay, minim
     plt.plot(scores, label='Episode Score')
     plt.plot(epsilon_plot(initial_epsilon, epsilon_decay, minimal_epsilon, len(scores)), '-r', label='Epsilon value')
     plt.ylim(-0.5, 1.1)
-    plt.legend(loc="lower right")
+    plt.legend(loc="lower right", frameon=True)
     plt.show()
 
 
@@ -51,5 +51,5 @@ def plot_scores_with_regression_line(scores):
     plt.plot(scores, label='Episode Score')
     plt.plot(episodes, regression_line(episodes), label='Regression line')
     plt.ylim(-0.5, 1.1)
-    plt.legend(loc="lower right")
+    plt.legend(loc="lower right", frameon=True)
     plt.show()

@@ -50,7 +50,7 @@ def basic_q_learning(
     environment = UnityToGymWrapper(unity_environment)
     possible_states = environment.observation_space.shape[0]
     possible_actions = environment.action_space.n
-    q_table = np.zeros((possible_states, possible_actions))
+    q_table = np.ones((possible_states, possible_actions))
     scores = []
 
     for _ in range(number_of_episodes):

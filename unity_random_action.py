@@ -33,7 +33,6 @@ def random_action(path_to_executable, number_of_episodes):
         done = False
         score = 0
         while not done:
-            env.render()
             action = env.action_space.sample()
             _, reward, done, _ = env.step(action)
             score = score + reward
